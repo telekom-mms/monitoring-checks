@@ -1,0 +1,10 @@
+name: Prettify Markdown
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  prettier-md:
+    # docs: https://github.com/telekom-mms/.github#prettier-md
+    uses: "telekom-mms/.github/.github/workflows/prettier-md.yml@main"

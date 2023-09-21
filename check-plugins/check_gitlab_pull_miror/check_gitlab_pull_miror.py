@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--url', required=True)
 parser.add_argument('--private_token', required=True)
 parser.add_argument('--project_id', required=True)
-parser.add_argument('--crit', default=60, help='minutes to last successfull run')
+parser.add_argument('--crit', default=60, help='minutes to last successful run')
 
 args = parser.parse_args()
 
@@ -48,7 +48,7 @@ if r.json()['update_status'] != 'finished':
     print(f'CRIT - pull mirror of project https://{args.url}/projects/{args.project_id} not in status finished')
     sys.exit(2)
 elif datetime.now() - (last_successful_update_at + timedelta(hours=2)) > timedelta(minutes=args.crit):
-    print(f'CRIT - last successfull of pull mirror in project https://{args.url}/projects/{args.project_id} {(last_successful_update_at + timedelta(hours=2)).strftime("%H:%M:%S")}')
+    print(f'CRIT - last successful of pull mirror in project https://{args.url}/projects/{args.project_id} {(last_successful_update_at + timedelta(hours=2)).strftime("%H:%M:%S")}')
     sys.exit(2)
 else:
     print(f'OK - pull mirror of project https://{args.url}/projects/{args.project_id} in status finished')
