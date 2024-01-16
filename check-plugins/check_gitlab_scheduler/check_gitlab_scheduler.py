@@ -82,7 +82,7 @@ def check_gitlab_scheduler(
             )
             print(
                 f"CRITICAL - Pipeline not run since {last_run_since} - Pipeline:"
-                "{description}, Job-Status: {status}, Pipeline-URL: {pipe_url}"
+                f" {description}, Job-Status: {status}, Pipeline-URL: {pipe_url}"
             )
             sys.exit(2)
         else:
@@ -99,7 +99,7 @@ def check_gitlab_scheduler(
         )
         print(
             f"CRITICAL - Pipeline pending since {pipeline_pending_since} - Pipeline:"
-            "{description}, Status: {status}, URL: {pipe_url}"
+            f" {description}, Status: {status}, URL: {pipe_url}"
         )
         sys.exit(2)
     else:
@@ -129,8 +129,8 @@ def check_gitlab_scheduler(
                     )
                     print(
                         f"CRITICAL - Job pending since {job_pending_since} - Pipeline:"
-                        " {description}, Job: {job['id']}, Job-Status: {job['status']},"
-                        " Pipeline-URL: {pipe_url}"
+                        f" {description}, Job: {job['id']}, Job-Status: {job['status']},"
+                        f" Pipeline-URL: {pipe_url}"
                     )
                     sys.exit(2)
         except requests.exceptions.HTTPError as err:
