@@ -8,7 +8,7 @@ check a pull mirror in the given gitlab project
 
 import argparse
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import gitlab
 import requests
 
@@ -38,17 +38,28 @@ headers = {
     }
 try:
     r = requests.get(URL,headers=headers,timeout=60)
+    r_json = r.json()
+    last_successful_update = r_json['last_successful_update_at']
+    last_successful_update_at = datetime.strptime(r_json['last_successful_update_at'],"%Y-%m-%dT%H:%M:%S.%fZ")
 except requests.exceptions.HTTPError as err:
     print(err)
     sys.exit(255)
+except requests.exceptions.JSONDecodeError as err:
+    print('unable to decode JSON from the HTTP Response', err)
+    sys.exit(255)
+except KeyError:
+    print('unable to load timestamp from api response', r_json)
+    sys.exit(255)
 
-last_successful_update_at = datetime.strptime(r.json()['last_successful_update_at'],"%Y-%m-%dT%H:%M:%S.%fZ")
+age = datetime.now(timezone.utc) - last_successful_update_at.replace(tzinfo=timezone.utc)
 
-if r.json()['update_status'] != 'finished':
+if r_json['update_status'] != 'finished':
     print(f'CRIT - pull mirror of project https://{args.url}/projects/{args.project_id} not in status finished')
     sys.exit(2)
-elif datetime.now() - (last_successful_update_at + timedelta(hours=2)) > timedelta(minutes=args.crit):
-    print(f'CRIT - last successful of pull mirror in project https://{args.url}/projects/{args.project_id} {(last_successful_update_at + timedelta(hours=2)).strftime("%H:%M:%S")}')
+elif age > timedelta(minutes=args.crit):
+    project_url = f"http://{args.url}/projects/{args.project_id}"
+    ts_last_update = last_successful_update_at.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+    print(f'CRIT - last successful of pull mirror in project {project_url} at {ts_last_update}')
     sys.exit(2)
 else:
     print(f'OK - pull mirror of project https://{args.url}/projects/{args.project_id} in status finished')
