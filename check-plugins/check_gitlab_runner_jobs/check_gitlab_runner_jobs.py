@@ -30,7 +30,7 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--runner", help="runner name:id (multiple separated by comma) format: name:id,name:id", required=True)
     args = parser.parse_args()
 
-    # argpars variables
+    # argparse variables
     base_url = args.url
     job_state = args.jobstate
     gitlab_access_token = args.token
