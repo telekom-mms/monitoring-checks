@@ -1,6 +1,6 @@
 # Check Gitlab Runner Jobs
 
-This script is an icinga2 monitoring check to check how many jobs are in a given state per runner
+This icinga2 monitoring-script checks how many jobs are in a given state per runner
 
 ```
 usage: check_gitlab_runner_jobs.py [-h] -u URL [-s JOBSTATE] -t TOKEN -r RUNNER
