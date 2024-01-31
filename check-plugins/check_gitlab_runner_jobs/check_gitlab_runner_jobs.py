@@ -23,9 +23,12 @@ def runner_string_to_dict(string):
 
 if __name__ == "__main__":
     # argparse configuration
-    parser = argparse.ArgumentParser(description="This script is an icinga2 monitoring check to check how many jobs are in a given state per runner")
+    parser = argparse.ArgumentParser(
+        description="This script is an icinga2 monitoring check to check how many jobs are in a given state per runner",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument("-u", "--url", help="gitlab base url", required=True)
-    parser.add_argument("-s", "--jobstate", help="job state (which jobs should be counted) default=running", default="running")
+    parser.add_argument("-s", "--jobstate", help="job state (which jobs should be counted)", default="running")
     parser.add_argument("-t", "--token", help="gitlab access token", required=True)
     parser.add_argument("-r", "--runner", help="runner name:id (multiple separated by comma) format: name:id,name:id", required=True)
     args = parser.parse_args()
