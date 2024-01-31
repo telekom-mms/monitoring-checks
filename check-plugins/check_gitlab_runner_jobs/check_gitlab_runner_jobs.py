@@ -21,7 +21,6 @@ def runner_string_to_dict(string):
         runner.update({string_split[0]: string_split[1]})
     return runner
 
-# script
 if __name__ == "__main__":
     # argparse configuration
     parser = argparse.ArgumentParser(description="This script is an icinga2 monitoring check to check how many jobs are in a given state per runner")
