@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/telekom-mms/monitoring-checks/tree/1.1.0) (2024-01-31)
+
+[Full Changelog](https://github.com/telekom-mms/monitoring-checks/compare/1.0.0...1.1.0)
+
+**Implemented enhancements:**
+
+- add check\_gitlab\_runner\_jobs [\#11](https://github.com/telekom-mms/monitoring-checks/pull/11) ([JulianMuehmelt](https://github.com/JulianMuehmelt))
+
 ## [1.0.0](https://github.com/telekom-mms/monitoring-checks/tree/1.0.0) (2024-01-19)
 
 [Full Changelog](https://github.com/telekom-mms/monitoring-checks/compare/c5257e8258e654fb9c6b444c36caf76cdb1c2a11...1.0.0)
