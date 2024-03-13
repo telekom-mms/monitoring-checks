@@ -10,17 +10,6 @@ Maintainer: Daniel Uhlmann & Andreas Hering
 This script is used to monitor and ensure the health of a Redis Sentinel cluster.
 It checks the availability of the master, the replicas, and verifies that the
 number of healthy replicas matches the expected count.
-
-Usage:
-    python3 check_redis_sentinel.py -u <sentinel_url> -p <sentinel_port>
-              -t <sentinel_auth_token> -r <healthy_replica_count> -n <redis_primary_name>
-
-Arguments:
-    -u, --sentinel_url: The URL of the Redis Sentinel.
-    -p, --sentinel_port: The port number of the Redis Sentinel.
-    -t, --sentinel_auth_token: The authentication token for the Redis Sentinel.
-    -r, --healthy_replica_count: The expected number of healthy replicas.
-    -n, --redis_primary_name: The name of the Redis primary.
 """
 
 import sys
