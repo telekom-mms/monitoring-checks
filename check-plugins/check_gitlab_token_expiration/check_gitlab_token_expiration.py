@@ -41,6 +41,7 @@ elif args.group_id != None:
     access_tokens = gl.groups.get(args.group_id, lazy=True, active=True).access_tokens.list()
 else:
     print('Please define on of these arguments: --user_id, --project_id, --group_id')
+    sys.exit(255)
 
 # get expires_at of access_token with the name args.token_name
 for token in access_tokens:
