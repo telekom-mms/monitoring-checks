@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Copyright 2023 Deutsche Telekom MMS GmbH
+Copyright 2023-2024 Deutsche Telekom MMS GmbH
 Maintainer: Christopher Grau
 check when a private token will expire
 """
@@ -17,7 +17,9 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('--url', required=True)
 parser.add_argument('--private_token',required=True)
-parser.add_argument('--user_id',required=True)
+parser.add_argument('--user_id', default=None)
+parser.add_argument('--project_id', default=None)
+parser.add_argument('--group_id', default=None)
 parser.add_argument('--token_name',required=True)
 parser.add_argument('--warn',default=10)
 parser.add_argument('--crit',default=5)
@@ -31,7 +33,14 @@ except gitlab.GitlabAuthenticationError:
     print('login with private token failed')
     sys.exit(255)
 
-access_tokens = gl.personal_access_tokens.list(user_id=args.user_id, lazy=True, active=True)
+if args.user_id != None:
+    access_tokens = gl.personal_access_tokens.list(user_id=args.user_id, lazy=True, active=True)
+elif args.project_id != None:
+    access_tokens = gl.projects.get(args.project_id, lazy=True, active=True).access_tokens.list()
+elif args.group_id != None:
+    access_tokens = gl.groups.get(args.group_id, lazy=True, active=True).access_tokens.list()
+else:
+    print('Please define on of these arguments: --user_id, --project_id, --group_id')
 
 # get expires_at of access_token with the name args.token_name
 for token in access_tokens:
