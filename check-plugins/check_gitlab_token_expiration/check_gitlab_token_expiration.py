@@ -3,7 +3,7 @@
 """
 Copyright 2023-2024 Deutsche Telekom MMS GmbH
 Maintainer: Christopher Grau
-check when a personal access token, a project access token or a group access token will expire
+check when a personal, project or group access token will expire
 """
 
 import argparse
@@ -13,7 +13,7 @@ import gitlab
 
 parser = argparse.ArgumentParser(
   prog = "check_gitlab_token_expiration.py",
-  description = "check when a personal access token,a project access token or a group access token will expire"
+  description = "check when a personal, project or group access token will expire"
 )
 
 parser.add_argument('--url', required=True)

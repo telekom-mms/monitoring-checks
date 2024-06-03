@@ -1,6 +1,6 @@
 # Check Gitlab Token Expiration
 
-This script is an icinga2 monitoring check to check when a personal access token, a project access token or a group access will expire.
+This script is an icinga2 monitoring check to check when a personal, project or group access token will expire.
 
 ```
 usage: check_gitlab_token_expiration.py [-h] --url URL --private_token PRIVATE_TOKEN --scope {user,project,group} --id ID --token_name TOKEN_NAME [--warn WARN] [--crit CRIT]
