@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.1](https://github.com/telekom-mms/monitoring-checks/tree/1.1.1) (2024-06-03)
+
+[Full Changelog](https://github.com/telekom-mms/monitoring-checks/compare/1.1.0...1.1.1)
+
+**Merged pull requests:**
+
+- add project and group access token [\#15](https://github.com/telekom-mms/monitoring-checks/pull/15) ([beechesII](https://github.com/beechesII))
+- Doc\(NOISSUE\): Updated README.md with existing checks [\#13](https://github.com/telekom-mms/monitoring-checks/pull/13) ([xFuture603](https://github.com/xFuture603))
+- Feat\(NOISSUE\): Added monitoring check for redis sentinel cluster [\#12](https://github.com/telekom-mms/monitoring-checks/pull/12) ([xFuture603](https://github.com/xFuture603))
+
 ## [1.1.0](https://github.com/telekom-mms/monitoring-checks/tree/1.1.0) (2024-01-31)
 
 [Full Changelog](https://github.com/telekom-mms/monitoring-checks/compare/1.0.0...1.1.0)
