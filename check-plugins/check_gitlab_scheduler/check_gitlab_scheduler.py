@@ -66,10 +66,18 @@ def check_gitlab_scheduler(
     status = last_pipeline["status"]
     pipeline_id = last_pipeline["id"]
     last_pipeline_creation_time = get_datetime(last_pipeline["created_at"])
+    scheduler_active = variables["active"]
 
     pipe_url = get_pipeline_url(  # noqa: F841
         gitlab_url, token, str(project_id), str(pipeline_id)
     )
+
+    if scheduler_active != True:
+        print(
+            f"WARNING - Scheduler is disabled - Pipeline:"
+            f" {description}, Job-Status: {status}, Pipeline-URL: {pipe_url}"
+        )
+        sys.exit(1)
 
     if status in ["success", "running"]:
         # check if the last run of the pipeline is not older than last_run seconds
