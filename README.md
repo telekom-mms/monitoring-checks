@@ -10,6 +10,6 @@ Multiple monitoring checks for system and application monitoring:
 
 # License
 
-Copyright 2023-2024 Telekom MMS GmbH
+Copyright 2023-2025 Telekom MMS GmbH
 
 This code is licensed under GPLv3.
