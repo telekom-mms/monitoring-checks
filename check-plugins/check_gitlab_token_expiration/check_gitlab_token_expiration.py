@@ -28,8 +28,8 @@ parser.add_argument('--id',
         help='User ID, Project ID or Group ID'
 )
 parser.add_argument('--token_name', required=True)
-parser.add_argument('--warn', default=10)
-parser.add_argument('--crit', default=5)
+parser.add_argument('--warn', default=10, type=int)
+parser.add_argument('--crit', default=5, type=int)
 
 args = parser.parse_args()
 
