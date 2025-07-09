@@ -15,14 +15,26 @@ import requests
 import pytz
 
 
+class StateOk(Exception):
+    name: str = "OK"
+    weight: int = 0
+
+class StateWarning(Exception):
+    name: str = "WARNING"
+    weight: int = 1
+
+class StateCritical(Exception):
+    name: str = "CRITICAL"
+    weight: int = 2
+
+
 def get_pipeline_url(
-    gitlab_url: str, token: str, project_id: str, pipeline_id: str
+    gitlab_url: str, client: requests.session, project_id: str, pipeline_id: str
 ) -> str:
     "Gets the full URL for the pipeline to display in the output"
     url = gitlab_url + "/api/v4/projects/" + project_id + "/pipelines/" + pipeline_id
-    headers = {"PRIVATE-TOKEN": token}
     try:
-        r = requests.request("GET", url, headers=headers)
+        r = client.get(url)
         r.raise_for_status()
     except requests.exceptions.HTTPError as err:
         print(f"CRITICAL - {err}")
@@ -37,12 +49,67 @@ def get_pipeline_url(
 # pylint: disable=too-many-arguments
 def check_gitlab_scheduler(
     gitlab_url: str,
-    token: str,
+    client: requests.session,
+    project_id: str,
+    scheduler_id: str | None,
+    pending_timeout: float,
+    last_run: float,
+) -> str:
+    "Gets all schedules of an project"
+    url = (
+        gitlab_url
+        + "/api/v4/projects/"
+        + project_id
+        + "/pipeline_schedules"
+    )
+    try:
+        r = client.get(url)
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        print(f"CRITICAL - {err}")
+        sys.exit(2)
+
+    scheduler_ids: list[str] = []
+    if scheduler_id:
+        scheduler_ids = scheduler_id.split(",")
+
+    states: list[StateOk | StateWarning | StateCritical] = []
+
+    for scheduler_data in r.json():
+        if not scheduler_id or (scheduler_id and str(scheduler_data['id']) in scheduler_ids):
+            states.append(
+                check_scheduler(
+                    gitlab_url,
+                    client,
+                    project_id,
+                    str(scheduler_data['id']),
+                    pending_timeout,
+                    last_run
+                )
+            )
+
+    states.sort(key=lambda state: state.weight, reverse=True)
+
+    for state in states:
+        print(f"[{state.name}] {state}")
+
+    if any(isinstance(s, StateCritical) for s in states):
+        sys.exit(2)
+    if any(isinstance(s, StateWarning) for s in states):
+        sys.exit(1)
+
+    sys.exit(0)
+
+
+# pylint: disable=too-many-arguments
+def check_scheduler(
+    gitlab_url: str,
+    client: requests.session,
     project_id: str,
     scheduler_id: str,
     pending_timeout: float,
     last_run: float,
-) -> str:
+) -> StateOk | StateWarning | StateCritical:
     "Checks the schedule"
     url = (
         gitlab_url
@@ -51,15 +118,13 @@ def check_gitlab_scheduler(
         + "/pipeline_schedules/"
         + scheduler_id
     )
-    headers = {"PRIVATE-TOKEN": token}
     try:
-        r = requests.request("GET", url, headers=headers)
+        r = client.get(url)
         r.raise_for_status()
     except requests.exceptions.HTTPError as err:
-        print(f"CRITICAL - {err}")
-        sys.exit(2)
+        return StateCritical(f"CRITICAL - {err}")
 
-    variables = json.loads(r.text)
+    variables = r.json()
 
     last_pipeline = variables["last_pipeline"]
     description = variables["description"]  # noqa: F841
@@ -69,15 +134,14 @@ def check_gitlab_scheduler(
     scheduler_active = variables["active"]
 
     pipe_url = get_pipeline_url(  # noqa: F841
-        gitlab_url, token, str(project_id), str(pipeline_id)
+        gitlab_url, client, str(project_id), str(pipeline_id)
     )
 
-    if scheduler_active != True:
-        print(
-            f"WARNING - Scheduler is disabled - Pipeline:"
+    if scheduler_active is not True:
+        return StateWarning(
+            f"Scheduler is disabled - Pipeline:"
             f" {description}, Job-Status: {status}, Pipeline-URL: {pipe_url}"
         )
-        sys.exit(1)
 
     if status in ["success", "running"]:
         # check if the last run of the pipeline is not older than last_run seconds
@@ -88,13 +152,10 @@ def check_gitlab_scheduler(
                 datetime.datetime.now(datetime.timezone.utc)
                 - last_pipeline_creation_time
             )
-            print(
-                f"CRITICAL - Pipeline not run since {last_run_since} - Pipeline:"
+            return StateCritical(
+                f"Pipeline not run since {last_run_since} - Pipeline:"
                 f" {description}, Job-Status: {status}, Pipeline-URL: {pipe_url}"
             )
-            sys.exit(2)
-        else:
-            pass
     elif (
         pending_timeout is not None
         and status == "pending"
@@ -105,14 +166,12 @@ def check_gitlab_scheduler(
         pipeline_pending_since = (  # noqa: F841
             datetime.datetime.now(datetime.timezone.utc) - last_pipeline_creation_time
         )
-        print(
-            f"CRITICAL - Pipeline pending since {pipeline_pending_since} - Pipeline:"
+        return StateCritical(
+            f"Pipeline pending since {pipeline_pending_since} - Pipeline:"
             f" {description}, Status: {status}, URL: {pipe_url}"
         )
-        sys.exit(2)
     else:
-        print(f"CRITICAL - Pipeline: {description}, Status: {status}, URL: {pipe_url}")
-        sys.exit(2)
+        return StateCritical(f"Pipeline: {description}, Status: {status}, URL: {pipe_url}")
 
     # check for pending jobs inside the pipeline. they can be pending, too
     if pending_timeout is not None:
@@ -125,7 +184,7 @@ def check_gitlab_scheduler(
             + "/jobs?scope[]=pending"
         )
         try:
-            r2 = requests.request("GET", jobs_url, headers=headers)
+            r2 = client.get(jobs_url)
             r2.raise_for_status()
             for job in r2.json():
                 job_datetime = get_datetime(job["created_at"])
@@ -135,18 +194,15 @@ def check_gitlab_scheduler(
                     job_pending_since = (  # noqa: F841
                         datetime.datetime.now(datetime.timezone.utc) - job_datetime
                     )
-                    print(
+                    return StateCritical(
                         f"CRITICAL - Job pending since {job_pending_since} - Pipeline:"
                         f" {description}, Job: {job['id']}, Job-Status: {job['status']},"
                         f" Pipeline-URL: {pipe_url}"
                     )
-                    sys.exit(2)
         except requests.exceptions.HTTPError as err:
-            print(f"CRITICAL - {err}")
-            sys.exit(2)
+            return StateCritical(f"CRITICAL - {err}")
 
-    print(f"OK - Pipeline: {description}, Status: {status}, URL: {pipe_url}")
-    sys.exit(0)
+    return StateOk(f"Pipeline: {description}, Status: {status}, URL: {pipe_url}")
 
 
 def get_datetime(date: str):
@@ -158,7 +214,7 @@ def get_datetime(date: str):
     return date_time
 
 
-def main():
+def main() -> None:
     "Entrypoint"
     parser = argparse.ArgumentParser(
         prog="Check Gitlab Scheduler",
@@ -170,7 +226,13 @@ last execution happened longer than a specified amount of time (--last-run)""",
     )
     parser.add_argument("-u", "--gitlab_url", dest="gitlab_url", required=True)
     parser.add_argument("-p", "--projectid", dest="project_id", required=True)
-    parser.add_argument("-s", "--schedulerid", dest="scheduler_id", required=True)
+    parser.add_argument(
+        "-s",
+        "--schedulerid",
+        dest="scheduler_id",
+        required=False,
+        help="Optional, can also be multiple scheduler ids separated by comma"
+    )
     parser.add_argument("-t", "--token", dest="token", required=True)
     parser.add_argument(
         "-o",
@@ -191,9 +253,12 @@ last execution happened longer than a specified amount of time (--last-run)""",
     )
     args = parser.parse_args()
 
+    client = requests.Session()
+    client.headers.update({'PRIVATE-TOKEN': args.token})
+
     check_gitlab_scheduler(
         args.gitlab_url,
-        args.token,
+        client,
         args.project_id,
         args.scheduler_id,
         args.pending_timeout,
