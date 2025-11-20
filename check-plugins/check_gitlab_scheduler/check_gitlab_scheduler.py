@@ -61,6 +61,7 @@ def check_gitlab_scheduler(
         + "/api/v4/projects/"
         + project_id
         + "/pipeline_schedules"
+        + "?per_page=1000"
     )
     try:
         r = client.get(url)
