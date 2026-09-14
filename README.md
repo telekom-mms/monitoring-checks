@@ -7,6 +7,8 @@ Multiple monitoring checks for system and application monitoring:
 - [check_gitlab_scheduler.py](check-plugins/check_gitlab_scheduler/README.md)
 - [check_gitlab_runner_jobs.py](check-plugins/check_gitlab_runner_jobs/README.md)
 - [check_redis_sentinel_cluster.py](check-plugins/check_redis_sentinel_cluster/README.md)
+- [check_kubernetes_nodes.py](check-plugins/check_kubernetes/README.md)
+- [check_kubernetes_pods.py](check-plugins/check_kubernetes/README.md)
 
 # License
 
