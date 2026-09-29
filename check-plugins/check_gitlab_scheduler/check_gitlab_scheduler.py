@@ -6,6 +6,7 @@ Copyright 2023 Deutsche Telekom MMS GmbH
 Maintainer: Christopher Grau
 """
 
+import os
 import sys
 import datetime
 import argparse
@@ -19,13 +20,28 @@ class StateOk(Exception):
     name: str = "OK"
     weight: int = 0
 
+
 class StateWarning(Exception):
     name: str = "WARNING"
     weight: int = 1
 
+
 class StateCritical(Exception):
     name: str = "CRITICAL"
     weight: int = 2
+
+
+class EnvDefault(argparse.Action):
+    def __init__(self, envvar, required=True, default=None, **kwargs):
+        if envvar:
+            if envvar in os.environ:
+                default = os.environ[envvar]
+        if required and default:
+            required = False
+        super(EnvDefault, self).__init__(default=default, required=required, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)
 
 
 def get_pipeline_url(
@@ -77,15 +93,17 @@ def check_gitlab_scheduler(
     states: list[StateOk | StateWarning | StateCritical] = []
 
     for scheduler_data in r.json():
-        if not scheduler_id or (scheduler_id and str(scheduler_data['id']) in scheduler_ids):
+        if not scheduler_id or (
+            scheduler_id and str(scheduler_data["id"]) in scheduler_ids
+        ):
             states.append(
                 check_scheduler(
                     gitlab_url,
                     client,
                     project_id,
-                    str(scheduler_data['id']),
+                    str(scheduler_data["id"]),
                     pending_timeout,
-                    last_run
+                    last_run,
                 )
             )
 
@@ -172,7 +190,9 @@ def check_scheduler(
             f" {description}, Status: {status}, URL: {pipe_url}"
         )
     else:
-        return StateCritical(f"Pipeline: {description}, Status: {status}, URL: {pipe_url}")
+        return StateCritical(
+            f"Pipeline: {description}, Status: {status}, URL: {pipe_url}"
+        )
 
     # check for pending jobs inside the pipeline. they can be pending, too
     if pending_timeout is not None:
@@ -225,16 +245,42 @@ in pending state (with --pending-timeout). It can also check if a Pipeline's
 last execution happened longer than a specified amount of time (--last-run)""",
         formatter_class=RawDescriptionHelpFormatter,
     )
-    parser.add_argument("-u", "--gitlab_url", dest="gitlab_url", required=True)
-    parser.add_argument("-p", "--projectid", dest="project_id", required=True)
+    parser.add_argument(
+        "-u",
+        "--gitlab_url",
+        dest="gitlab_url",
+        required=True,
+        action=EnvDefault,
+        envvar="GITLAB_URL",
+        help="URL to Gitlab. Can also be set via env-var 'GITLAB_URL'",
+    )
+    parser.add_argument(
+        "-p",
+        "--projectid",
+        dest="project_id",
+        required=True,
+        action=EnvDefault,
+        envvar="PROJECTID",
+        help="Project-ID to check. Can also be set via env-var 'PROJECTID'",
+    )
     parser.add_argument(
         "-s",
         "--schedulerid",
         dest="scheduler_id",
         required=False,
-        help="Optional, can also be multiple scheduler ids separated by comma"
+        help="Optional, can also be multiple scheduler ids separated by comma. Can also be set via env-var SCHEDULERID",
+        action=EnvDefault,
+        envvar="SCHEDULERID",
     )
-    parser.add_argument("-t", "--token", dest="token", required=True)
+    parser.add_argument(
+        "-t",
+        "--token",
+        dest="token",
+        required=True,
+        action=EnvDefault,
+        envvar="TOKEN",
+        help="Token to connect to Gitalb. Can also be set via env-var TOKEN",
+    )
     parser.add_argument(
         "-o",
         "--pending-timeout",
@@ -242,20 +288,24 @@ last execution happened longer than a specified amount of time (--last-run)""",
         type=int,
         help=(
             "check the pipeline itself and the jobs in the pipeline if they are in"
-            " pending for pending_timeout seconds"
+            " pending for pending_timeout seconds. Can also be set via env-var PENDING_TIMEOUT"
         ),
+        action=EnvDefault,
+        envvar="PENDING_TIMEOUT",
     )
     parser.add_argument(
         "-l",
         "--last-run",
         dest="last_run",
         type=int,
-        help="check if the last pipeline was ran for more then last_run seconds",
+        help="check if the last pipeline was ran for more then last_run seconds. Can also be set via env-var LAST_RUN",
+        action=EnvDefault,
+        envvar="LAST_RUN",
     )
     args = parser.parse_args()
 
     client = requests.Session()
-    client.headers.update({'PRIVATE-TOKEN': args.token})
+    client.headers.update({"PRIVATE-TOKEN": args.token})
 
     check_gitlab_scheduler(
         args.gitlab_url,
