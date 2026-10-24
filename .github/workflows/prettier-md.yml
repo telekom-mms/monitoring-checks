@@ -7,4 +7,4 @@ on:
 jobs:
   prettier-md:
     # docs: https://github.com/telekom-mms/.github#prettier-md
-    uses: "telekom-mms/.github/.github/workflows/prettier-md.yml@03fc2ef31244b1475f783ee54b2521fa4d3df676" # main
+    uses: "telekom-mms/.github/.github/workflows/prettier-md.yml@bc5e4db6c657f9993231c8a06d0f256d485e016a" # main
