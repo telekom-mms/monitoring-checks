@@ -1,0 +1,72 @@
+#!/usr/bin/env -S uv run --script
+#
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["kubernetes", "nagiosplugin"]
+# ///
+
+"""
+Check for Kubernetes Nodes
+"""
+
+import argparse
+
+import nagiosplugin
+from kubernetes import client, config
+
+
+class Nodes(nagiosplugin.Resource):
+    """
+    Check for Kubernetes Nodes
+    """
+
+    def __init__(self, kube_config):
+        self.kube_config = kube_config
+        self.nodes = []
+        self.nodes_with_problems = []
+
+    def probe(self):
+        config.load_kube_config(self.kube_config)
+        kube = client.CoreV1Api()
+
+        for node in kube.list_node().items:
+            self.nodes.append(node)
+            for condition in node.status.conditions:
+                # OutOfDisk is not postet in k8s > 1.12, but is still listet in node status conditions,
+                # see https://github.com/kubernetes/kubernetes/pull/72507
+                if condition.type == "OutOfDisk":
+                    continue
+
+                if (condition.type == "Ready" and condition.status != "True") or (
+                    condition.type != "Ready" and condition.status != "False"
+                ):
+                    self.nodes_with_problems.append(node)
+                    break
+
+        return [
+            nagiosplugin.Metric("problem_nodes", len(self.nodes_with_problems), min=0),
+            nagiosplugin.Metric("all_nodes", len(self.nodes), min=0),
+        ]
+
+
+@nagiosplugin.guarded
+def main():
+    """
+    :return:
+    """
+    argp = argparse.ArgumentParser(
+        description="Nagios/Icinga check for Kubernetes Nodes"
+    )
+    argp.add_argument("--kube-config", help="Kubernetes Config File")
+    args = argp.parse_args()
+
+    check = nagiosplugin.Check(
+        Nodes(args.kube_config),
+        nagiosplugin.ScalarContext("problem_nodes", 1, 2),
+        nagiosplugin.ScalarContext("all_nodes"),
+    )
+    check.main()
+
+
+if __name__ == "__main__":
+    main()
